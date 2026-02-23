@@ -2,7 +2,7 @@ name: Check Ubuntu Image Date
 
 on:
   schedule:
-    - cron: '0 8 * * *' # Runs every day at 08:00 UTC
+    - cron: '* * * * *' # Runs every day at 08:00 UTC
   workflow_dispatch:   # Allows manual triggering from the Actions tab
 
 jobs:
