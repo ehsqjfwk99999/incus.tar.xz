@@ -1,0 +1,45 @@
+name: Check Ubuntu Image Date
+
+on:
+  schedule:
+    - cron: '0 8 * * *' # Runs every day at 08:00 UTC
+  workflow_dispatch:   # Allows manual triggering from the Actions tab
+
+jobs:
+  check-date:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          pip install requests pandas lxml
+
+      - name: Run Extraction Script
+        id: get-date
+        run: |
+          # You can either point to a .py file or run it as a heredoc
+          python -c "
+          import requests
+          import pandas as pd
+          try:
+              df = pd.read_html('https://images.linuxcontainers.org/')[0]
+              match = df[(df['Distribution'] == 'ubuntu') & (df['Release'] == 'noble') & (df['Architecture'] == 'amd64') & (df['Variant'] == 'cloud')]
+              date = match['Build date'].values[0]
+              print(f'DATE={date}')
+              with open('$GITHUB_OUTPUT', 'a') as f:
+                  f.write(f'build_date={date}\n')
+          except Exception as e:
+              print(f'Error: {e}')
+              exit(1)
+          "
+
+      - name: Use the Date
+        run: |
+          echo "The latest build date is ${{ steps.get-date.outputs.build_date }}"
