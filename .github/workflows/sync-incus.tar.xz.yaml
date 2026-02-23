@@ -27,7 +27,7 @@ jobs:
           YYMMDD=$(date +'%y%m%d')
           
           # 3. Final filename: incus-260224.tar.xz
-          FILENAME="incus-${YYMMDD}.tar.xz"
+          FILENAME="incus.tar.xz-${YYMMDD}"
           
           echo "IMAGE_URL=${BASE_DIR}${LATEST_TS}/incus.tar.xz" >> $GITHUB_ENV
           echo "FILENAME=${FILENAME}" >> $GITHUB_ENV
@@ -56,4 +56,5 @@ jobs:
             git diff --staged --quiet || (git commit -m "Add Ubuntu Noble image: ${{ env.FILENAME }} (Source: ${{ env.TIMESTAMP }})" && git push)
           else
             echo "Nothing to commit."
+
           fi
