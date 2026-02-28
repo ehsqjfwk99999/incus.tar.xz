@@ -65,5 +65,3 @@ jobs:
             git commit -m "Sync: Added ${{ env.FILENAME }} and updated ${{ env.STATIC_NAME }} (Source: ${{ env.TIMESTAMP }})"
             git push
           fi
-
-          fi
