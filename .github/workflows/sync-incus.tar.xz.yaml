@@ -19,6 +19,7 @@ jobs:
         id: vars
         run: |
           BASE_DIR="https://images.linuxcontainers.org/images/ubuntu/noble/amd64/cloud/"
+          STATIC_NAME="incus.tar.xz"
           
           # 1. Get the latest remote timestamp (e.g., 20260223_07:42)
           LATEST_TS=$(curl -sL $BASE_DIR | grep -oE '[0-9]{8}_[0-9]{2}:[0-9]{2}' | sort | tail -n 1)
@@ -27,8 +28,9 @@ jobs:
           YYMMDD=$(date +'%y%m%d')
           
           # 3. Final filename: incus-260224.tar.xz
-          FILENAME="incus.tar.xz-${YYMMDD}"
+          FILENAME="${STATIC_NAME}-${YYMMDD}"
           
+          echo "STATIC_NAME=${STATIC_NAME}" >> $GITHUB_ENV
           echo "IMAGE_URL=${BASE_DIR}${LATEST_TS}/incus.tar.xz" >> $GITHUB_ENV
           echo "FILENAME=${FILENAME}" >> $GITHUB_ENV
           echo "TIMESTAMP=${LATEST_TS}" >> $GITHUB_ENV
@@ -44,17 +46,24 @@ jobs:
           echo "Downloading from: ${{ env.IMAGE_URL }}"
           curl -L "${{ env.IMAGE_URL }}" -o "${{ env.FILENAME }}"
 
+          # Always copy the daily file to the static name to ensure it's the latest version
+          echo "Updating ${{ env.STATIC_NAME }}..."
+          cp "${{ env.FILENAME }}" "${{ env.STATIC_NAME }}"
+
       - name: Commit and Push
         run: |
           git config --global user.name "github-actions[bot]"
           git config --global user.email "github-actions[bot]@users.noreply.github.com"
           
-          # Only add and commit if the file exists and isn't already tracked
-          if [ -f "${{ env.FILENAME }}" ]; then
-            git add "${{ env.FILENAME }}"
-            # Check for changes (in case the filename is the same but the content is different)
-            git diff --staged --quiet || (git commit -m "Add Ubuntu Noble image: ${{ env.FILENAME }} (Source: ${{ env.TIMESTAMP }})" && git push)
+          # Add both the new dated file and the updated static file
+          git add "${{ env.FILENAME }}" "${{ env.STATIC_NAME }}"
+          
+          # Check for changes in either file
+          if git diff --staged --quiet; then
+            echo "No changes detected. Repository is already up to date."
           else
-            echo "Nothing to commit."
+            git commit -m "Sync: Added ${{ env.FILENAME }} and updated ${{ env.STATIC_NAME }} (Source: ${{ env.TIMESTAMP }})"
+            git push
+          fi
 
           fi
